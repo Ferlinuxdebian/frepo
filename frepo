@@ -1,0 +1,211 @@
+#!/bin/bash
+
+# Opção de depuração
+# set -x
+
+# Função para verificar permissões
+verifyroot() {
+if [ "$UID" -ne 0 ]; then
+whiptail                                            \
+     --title 'Sem permissões!!'                     \
+     --msgbox 'Você presisa de root ou use o sudo.' \
+     0 0
+     clear
+     exit 1
+fi
+}
+
+# Função que realizado o backup dos reposítórios 
+backup() {
+cd /etc/yum.repos.d/
+if ! grep "country" *; then
+     mkdir .bak &>/dev/null && cp rpmfusion* fedora* .bak
+else
+   :
+fi
+}
+
+# Função que realiza restatura o backup
+restoure() {
+cd /etc/yum.repos.d/
+\cp .bak/* .
+clear
+}
+
+# Função que baixa uma lista de servers para comparação
+list_servers_file() {
+if wget -O list_serves.txt https://pastebin.com/raw/Nqwr89gy; then
+   dos2unix list_serves.txt &>/dev/null
+else
+   echo "Não foi possível baixar uma lista de servers para comparação!"
+   exit 1
+fi
+}
+
+# Função para mudar os servidores oficiais
+change-server_official() {
+server1=$(whiptail --inputbox 'Informe o servidor Ex: ("br","us","ar"):' 0 0 3>&1 1>&2 2>&3)
+
+server="${server1,,}" #converte para minúsculo
+
+if [ -z "$server" ]; then
+      whiptail              \
+      --title 'Cancelado!!' \
+      --msgbox 'Saindo....' \
+      0 0
+      clear
+      exit 2
+fi
+
+# Código que realiza a alteração no repositório
+if grep -qwi "$server$" list_serves.txt; then  
+
+server="${server1,,}" #converte para minúsculo
+      
+      if grep -q '&arch=$basearch$' /etc/yum.repos.d/fedora.repo; then          
+         sed -i "s|&arch=\$basearch$|\&arch=\$basearch\&country=$server|" \
+         /etc/yum.repos.d/fedora*
+      else 
+         sed -Ei "s|\&country=[a-z]{2}?$|\&country=$server|" \
+         /etc/yum.repos.d/fedora*
+      fi
+      
+      whiptail                                \
+      --title 'Parabéns'                      \
+      --msgbox 'Server alterado com sucesso.' \
+      0 0
+     clear
+else
+      whiptail                                         \
+      --title 'Erro!!'                                 \
+      --msgbox 'Não foi possível determinar o server.' \
+      0 0
+     clear
+fi
+}
+
+# Função para mudar apenas o repo RPMfusion
+change-server_rpmfusion() {
+server1=$(whiptail --inputbox 'Informe o servidor Ex: ("br","us","ar"):' 0 0 3>&1 1>&2 2>&3)
+
+server="${server1,,}" #converte para minúsculo
+
+if [ -z "$server" ]; then
+      whiptail              \
+      --title 'Cancelado!!' \
+      --msgbox 'Saindo....' \
+      0 0
+      clear
+      exit 2
+fi
+
+# Código que realiza a alteração no repositório
+if grep -qwi "$server$" list_serves.txt; then  
+      
+      if grep -q '&arch=$basearch$' /etc/yum.repos.d/rpmfusion*; then          
+         sed -i "s|&arch=\$basearch$|\&arch=\$basearch\&country=$server|" \
+         /etc/yum.repos.d/rpmfusion*
+      else 
+         sed -Ei "s|\&country=[a-z]{2}?$|\&country=$server|" \
+         /etc/yum.repos.d/rpmfusion*
+      fi
+      
+      whiptail                                \
+      --title 'Parabéns'                      \
+      --msgbox 'Server alterado com sucesso.' \
+      0 0
+      clear
+else
+      whiptail                                         \
+      --title 'Erro!!'                                 \
+      --msgbox 'Não foi possível determinar o server.' \
+      0 0
+     clear
+fi
+}
+
+# Função usada para alterar tando os oficiais quanto o RPMfusion
+change_all() {
+server1=$(whiptail --inputbox 'Informe o servidor Ex: ("br","us","ar"):' 0 0 3>&1 1>&2 2>&3)
+
+server="${server1,,}" #converte para minúsculo
+
+if [ -z "$server" ]; then
+      whiptail              \
+      --title 'Cancelado!!' \
+      --msgbox 'Saindo....' \
+      0 0
+      clear
+      exit 2
+fi
+
+# Código que realiza a alteração no repositório
+if grep -qwi "$server$" list_serves.txt; then  
+      
+      if grep -q '&arch=$basearch$' /etc/yum.repos.d/fedora.repo; then          
+         sed -i "s|&arch=\$basearch$|\&arch=\$basearch\&country=$server|" \
+         /etc/yum.repos.d/fedora*
+      else 
+         sed -Ei "s|\&country=[a-z]{2}?$|\&country=$server|" \
+         /etc/yum.repos.d/fedora*
+      fi
+      
+      
+      if grep -q '&arch=$basearch$' /etc/yum.repos.d/rpmfusion*; then          
+         sed -i "s|&arch=\$basearch$|\&arch=\$basearch\&country=$server|" \
+         /etc/yum.repos.d/rpmfusion*
+      else 
+         sed -Ei "s|\&country=[a-z]{2}?$|\&country=$server|" \
+         /etc/yum.repos.d/rpmfusion*
+      fi
+      
+      whiptail                                \
+      --title 'Parabéns'                      \
+      --msgbox 'Server alterado com sucesso.' \
+      0 0
+     clear
+else
+      whiptail                                         \
+      --title 'Erro!!'                                 \
+      --msgbox 'Não foi possível determinar o server.' \
+      0 0
+     clear
+fi
+}
+
+#---------#
+#  BEGIN  #
+#---------#
+cd repotest &>/dev/null || mkdir repotest &>/dev/null && cd repotest
+backup     # Chama a função de backup dos repos
+verifyroot # Chama a função que verifica se é root
+option=$(whiptail --checklist "Selecione uma opção:" 0 0 0 \
+    "1" "Restaurar as configurações"     off               \
+    "2" "Alterar repositórios oficiais"  off               \
+    "3" "Alterar repositórios RPMfusion" off 3>&1 1>&2 2>&3)  
+
+case $option in
+   \"1\")
+          restoure
+          ;;
+   
+   \"2\") 
+	       list_servers_file
+           change-server_official
+           ;;
+    \"3\")
+           list_servers_file
+           change-server_rpmfusion
+           ;;
+    \"2\"\ \"3\")
+           list_servers_file
+           change_all
+           ;;
+     *)  
+        whiptail                      \
+      --title 'Informativo!!'                 \
+      --msgbox 'Opção não suportada ou cancelamento voluntário' \
+      0 0
+      clear
+      exit 15
+esac
