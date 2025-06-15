@@ -1,5 +1,5 @@
 # frepo
-Script que usa o Whiptail para alterar os repositórios a região dos repositórios no Fedora Linux.
+Script que usa o Whiptail para alterar a região dos repositórios no Fedora Linux.
 
 # Instrições de instalação
 Instale o whiptail
