@@ -10,7 +10,7 @@ Clone o repositório
 ```
 git clone https://github.com/Ferlinuxdebian/frepo.git
 ```
-Instale a aplicaçõa
+Instale a aplicação
 ```
 cd frepo/ && chmod +x frepo && sudo cp frepo /usr/local/bin
 ```
